@@ -1,0 +1,22 @@
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { MemoryExplorerClient } from "@/components/memories/memory-explorer-client"
+
+export default async function MemoriesPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  const { data: memories } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  return <MemoryExplorerClient initialMemories={memories || []} userId={user.id} />
+}
