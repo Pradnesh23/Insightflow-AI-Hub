@@ -5,6 +5,7 @@ node_modules/
 
 # Testing
 coverage/
+*.test.js.snap
 
 # Production
 build/
@@ -25,6 +26,9 @@ lerna-debug.log*
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+.env.test
 
 # IDE
 .vscode/
@@ -42,3 +46,30 @@ Thumbs.db
 # Cache
 .eslintcache
 .turbo/
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/crash.log
+terraform/.terraformrc
+terraform/terraform.rc
+
+# Docker
+.dockerignore
+
+# Monitoring
+prometheus_data/
+grafana_data/
+redis_data/
+
+# Sentry
+.sentryclirc
+
+# Vercel
+.vercel
+
+# Local development
+*.local
