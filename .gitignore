@@ -60,6 +60,11 @@ terraform/terraform.rc
 # Docker
 .dockerignore
 
+# Jenkins
+jenkins_home/
+*.log
+tfplan
+
 # Monitoring
 prometheus_data/
 grafana_data/

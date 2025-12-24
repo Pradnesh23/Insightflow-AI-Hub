@@ -1,0 +1,65 @@
+# Jenkins with Docker Compose
+# Runs Jenkins locally for CI/CD pipeline testing
+# Includes Trivy for infrastructure security scanning
+
+version: '3.8'
+
+services:
+  # Jenkins Controller
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"   # Jenkins Web UI
+      - "50000:50000" # Jenkins Agent port
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace  # Mount project for scanning
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+    networks:
+      - jenkins-network
+    restart: unless-stopped
+
+  # Trivy Scanner Container (for IaC scanning)
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: trivy-scanner
+    volumes:
+      - ./terraform:/terraform:ro
+      - trivy-cache:/root/.cache/trivy
+    networks:
+      - jenkins-network
+    # Keep container running for on-demand scans
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  # Docker-in-Docker for building images in Jenkins
+  docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - docker-certs:/certs/client
+      - jenkins_home:/var/jenkins_home
+    networks:
+      jenkins-network:
+        aliases:
+          - docker
+    restart: unless-stopped
+
+networks:
+  jenkins-network:
+    driver: bridge
+
+volumes:
+  jenkins_home:
+    name: jenkins_home
+  docker-certs:
+    name: jenkins-docker-certs
+  trivy-cache:
+    name: trivy-cache

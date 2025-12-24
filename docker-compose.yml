@@ -1,0 +1,66 @@
+# InsightFlow-AI-Hub Docker Compose
+# Orchestrates backend (FastAPI) and frontend (Next.js) services
+
+version: '3.8'
+
+services:
+  # Python FastAPI Backend with LangGraph
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: insightflow-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - ENVIRONMENT=production
+    volumes:
+      # Mount for development (comment out for production)
+      - ./backend:/app:ro
+    networks:
+      - insightflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        - PYTHON_BACKEND_URL=http://backend:8000
+    container_name: insightflow-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - PYTHON_BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - insightflow-network
+    restart: unless-stopped
+
+networks:
+  insightflow-network:
+    driver: bridge
+
+# Volume for persistent data (if needed)
+volumes:
+  backend-data:
